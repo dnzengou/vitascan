@@ -1,9 +1,16 @@
-// VitaScan EvoMetaClaw Service Worker - Basic offline support
-const CACHE_NAME = 'vitascan-evometaclaw-v1';
+// VitaScan EvoMetaClaw Service Worker v2 - Full PWA offline support
+const CACHE_NAME = 'vitascan-evometaclaw-v2';
 const urlsToCache = [
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './sdk/vitascan-sdk.js'
 ];
+
+// Demo product data for full offline experience
+const OFFLINE_DEMOS = {
+  'coke': { product_name: "Coca-Cola Classic", nutriscore_grade: "e", _demoScore: 22 },
+  'oats': { product_name: "Quaker Oats", nutriscore_grade: "a", _demoScore: 88 }
+};
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -24,6 +31,15 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  if (url.hostname.includes('openfoodfacts.org')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request).catch(() => {
