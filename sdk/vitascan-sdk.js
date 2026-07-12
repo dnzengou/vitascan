@@ -1,1 +1,1 @@
-PASTE FULL SDK CONTENT (from previous reads and edits)
+FULL UPDATED SDK WITH WHITE-LABEL
