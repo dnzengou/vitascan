@@ -1,1 +1,1 @@
-PASTE FULL SDK CONTENT (from previous reads and edits)
+FULL SDK
