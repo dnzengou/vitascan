@@ -1,1 +1,2030 @@
-FULL UPDATED INDEX WITH PROFILE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VitaScan EvoMetaClaw • FMCG Health &amp; Sustainability Scanner</title>
+    <meta name="description" content="Evolved with EvoMetaClaw protocol (Ci+E+Im+B+P+D). Scan any FMCG QR code for personalized health (VitaScore + Nutri-Score) and citizen sustainability insights. Powered by Open Food Facts. Installable PWA.">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="VitaScan EvoMetaClaw">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <!-- EvoMetaClaw SDK: core intelligence, self-evolving model, eco scoring. Cached by SW for resilience. -->
+    <script src="sdk/vitascan-sdk.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Poppins:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #10b981;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Poppins', 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .health-gradient {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .score-circle {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .nutri-badge {
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .metric-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        .ingredient-tag {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            white-space: nowrap;
+        }
+
+        .scan-overlay {
+            background: linear-gradient(
+                to bottom,
+                transparent 20%,
+                rgba(16, 185, 129, 0.15) 50%,
+                transparent 80%
+            );
+            animation: scanline 2s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(300%); }
+        }
+
+        .gauge-bg {
+            stroke: #e5e7eb;
+        }
+        
+        .gauge-progress {
+            transition: stroke-dashoffset 1s ease-out;
+            stroke-linecap: round;
+        }
+
+        .product-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .section-header {
+            font-size: 1.1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .verdict-text {
+            font-size: 1.05rem;
+            line-height: 1.4;
+        }
+
+        .nav-active {
+            color: #10b981;
+            border-bottom: 3px solid #10b981;
+            font-weight: 600;
+        }
+
+        .modal {
+            animation: modalPop 0.2s ease-out forwards;
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .health-score {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .data-source {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900">
+    <!-- Header / Nav -->
+    <header class="bg-white border-b border-zinc-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-x-3">
+                    <div class="w-10 h-10 rounded-2xl health-gradient flex items-center justify-center shadow-inner">
+                        <i class="fa-solid fa-qrcode text-white text-3xl"></i>
+                    </div>
+                    <div>
+                        <span class="font-display text-3xl font-semibold tracking-tighter">Vita</span>
+                        <span class="font-display text-3xl font-semibold tracking-tighter text-emerald-600">Scan</span>
+                    </div>
+                </div>
+
+                <!-- Nav -->
+                <nav class="hidden md:flex items-center gap-x-8 text-sm">
+                    <a href="#" onclick="showSection('scan-section')" class="nav-link px-1 py-1 text-zinc-600 hover:text-zinc-900 font-medium">Scan</a>
+                    <a href="#" onclick="showSection('history-section')" class="nav-link px-1 py-1 text-zinc-600 hover:text-zinc-900 font-medium">History</a>
+                    <a href="#" onclick="showAbout()" class="nav-link px-1 py-1 text-zinc-600 hover:text-zinc-900 font-medium">How it works</a>
+                </nav>
+
+                <div class="flex items-center gap-x-3">
+                    <!-- Dark Mode Toggle (EvoMetaClaw P evolution) -->
+                    <button onclick="toggleDarkMode()" 
+                            class="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-emerald-600 transition-colors"
+                            title="Toggle dark mode">
+                        <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+                    </button>
+
+                    <!-- Profile Button (new persistent user profile) -->
+                    <button onclick="openProfileModal()" 
+                            class="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-emerald-600 transition-colors"
+                            title="Your Profile & Preferences">
+                        <i class="fa-solid fa-user text-lg"></i>
+                    </button>
+
+                    <!-- PWA Install Button -->
+                    <button id="pwa-install-btn" onclick="window.installPWA && window.installPWA()"
+                            class="hidden items-center gap-x-2 px-4 h-9 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl transition-all active:scale-[0.985]">
+                        <i class="fa-solid fa-download"></i>
+                        <span class="hidden sm:inline">Install App</span>
+                    </button>
+
+                    <div class="hidden sm:flex items-center bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium px-3 h-8 rounded-3xl">
+                        <i class="fa-solid fa-globe mr-1.5"></i>
+                        <span>Powered by Open Food Facts</span>
+                    </div>
+                    
+                    <!-- Mobile menu -->
+                    <button onclick="showSection('history-section')" class="md:hidden w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-zinc-700">
+                        <i class="fa-solid fa-history text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
+        
+        <!-- SCAN SECTION -->
+        <div id="scan-section">
+            <!-- Hero -->
+            <div class="pt-8 pb-6 text-center">
+                <div class="inline-flex items-center gap-x-2 bg-white shadow-sm border border-zinc-200 rounded-3xl px-4 py-1.5 mb-4">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span class="text-xs font-semibold tracking-widest text-emerald-600">FOR CONSUMERS &amp; CITIZENS</span>
+                </div>
+                
+                <h1 class="text-5xl sm:text-6xl font-display font-semibold tracking-tighter leading-none mb-3">
+                    Know what's really<br>in your products.
+                </h1>
+                <p class="max-w-md mx-auto text-lg text-zinc-600">
+                    Scan any FMCG product's QR code. Get instant, science-backed health insights and visual scores.
+                </p>
+            </div>
+
+            <!-- Big Scan Button -->
+            <div class="flex justify-center mb-8">
+                <button onclick="startQRScan()"
+                        class="group flex items-center justify-center gap-x-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-all shadow-lg shadow-emerald-600/30 text-white text-xl font-semibold px-10 h-20 rounded-3xl">
+                    <i class="fa-solid fa-camera text-3xl group-active:scale-95 transition-transform"></i>
+                    <div class="text-left leading-none">
+                        <div>SCAN QR CODE</div>
+                        <div class="text-emerald-200 text-sm font-normal tracking-wide">Point at product packaging</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Quick Stats / Trust -->
+            <div class="flex justify-center gap-x-8 text-center text-sm mb-10">
+                <div>
+                    <div class="font-semibold text-emerald-600">50K+</div>
+                    <div class="text-xs text-zinc-500">Products analyzed</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-emerald-600">92%</div>
+                    <div class="text-xs text-zinc-500">Users more informed</div>
+                </div>
+                <div>
+                    <div class="font-semibold text-emerald-600">Open</div>
+                    <div class="text-xs text-zinc-500">Data you can trust</div>
+                </div>
+            </div>
+
+            <!-- Demo Products -->
+            <div>
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <div>
+                        <span class="font-semibold text-lg">Try demo products</span>
+                        <span class="text-xs text-zinc-500 ml-2">(Instant results)</span>
+                    </div>
+                    <button onclick="showSection('history-section')" class="text-xs flex items-center gap-x-1 text-emerald-600 hover:text-emerald-700 font-medium">
+                        VIEW HISTORY <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                    <!-- Demo Cards -->
+                    <div onclick="loadDemoProduct('coke')" class="product-card cursor-pointer bg-white border border-zinc-200 hover:border-emerald-200 rounded-3xl p-4 flex flex-col">
+                        <div class="flex justify-between items-start">
+                            <div class="w-9 h-9 bg-red-100 rounded-2xl flex items-center justify-center">
+                                <i class="fa-solid fa-wine-bottle text-red-500"></i>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 bg-red-100 text-red-600 rounded-xl font-mono">E</span>
+                        </div>
+                        <div class="mt-auto pt-3">
+                            <div class="font-semibold text-sm leading-tight">Coca-Cola Classic</div>
+                            <div class="text-xs text-zinc-500">330ml • Beverage</div>
+                            <div class="mt-1 flex items-center gap-x-1.5">
+                                <div class="text-xs font-bold text-red-500">Score: 22</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div onclick="loadDemoProduct('oats')" class="product-card cursor-pointer bg-white border border-zinc-200 hover:border-emerald-200 rounded-3xl p-4 flex flex-col">
+                        <div class="flex justify-between items-start">
+                            <div class="w-9 h-9 bg-amber-100 rounded-2xl flex items-center justify-center">
+                                <i class="fa-solid fa-seedling text-amber-600"></i>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-xl font-mono">A</span>
+                        </div>
+                        <div class="mt-auto pt-3">
+                            <div class="font-semibold text-sm leading-tight">Quaker Oats</div>
+                            <div class="text-xs text-zinc-500">500g • Breakfast</div>
+                            <div class="mt-1 flex items-center gap-x-1.5">
+                                <div class="text-xs font-bold text-emerald-500">Score: 88</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div onclick="loadDemoProduct('yogurt')" class="product-card cursor-pointer bg-white border border-zinc-200 hover:border-emerald-200 rounded-3xl p-4 flex flex-col">
+                        <div class="flex justify-between items-start">
+                            <div class="w-9 h-9 bg-sky-100 rounded-2xl flex items-center justify-center">
+                                <i class="fa-solid fa-cheese text-sky-600"></i>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 bg-lime-100 text-lime-600 rounded-xl font-mono">B</span>
+                        </div>
+                        <div class="mt-auto pt-3">
+                            <div class="font-semibold text-sm leading-tight">Greek Yogurt Natural</div>
+                            <div class="text-xs text-zinc-500">150g • Dairy</div>
+                            <div class="mt-1 flex items-center gap-x-1.5">
+                                <div class="text-xs font-bold text-lime-500">Score: 76</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div onclick="loadDemoProduct('chips')" class="product-card cursor-pointer bg-white border border-zinc-200 hover:border-emerald-200 rounded-3xl p-4 flex flex-col">
+                        <div class="flex justify-between items-start">
+                            <div class="w-9 h-9 bg-orange-100 rounded-2xl flex items-center justify-center">
+                                <i class="fa-solid fa-bowl-food text-orange-500"></i>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 bg-orange-100 text-orange-600 rounded-xl font-mono">D</span>
+                        </div>
+                        <div class="mt-auto pt-3">
+                            <div class="font-semibold text-sm leading-tight">Classic Potato Chips</div>
+                            <div class="text-xs text-zinc-500">150g • Snacks</div>
+                            <div class="mt-1 flex items-center gap-x-1.5">
+                                <div class="text-xs font-bold text-orange-500">Score: 38</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div onclick="loadDemoProduct('almonds')" class="product-card cursor-pointer bg-white border border-zinc-200 hover:border-emerald-200 rounded-3xl p-4 flex flex-col">
+                        <div class="flex justify-between items-start">
+                            <div class="w-9 h-9 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                                <i class="fa-solid fa-leaf text-emerald-600"></i>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-xl font-mono">A</span>
+                        </div>
+                        <div class="mt-auto pt-3">
+                            <div class="font-semibold text-sm leading-tight">Roasted Almonds</div>
+                            <div class="text-xs text-zinc-500">200g • Nuts</div>
+                            <div class="mt-1 flex items-center gap-x-1.5">
+                                <div class="text-xs font-bold text-emerald-500">Score: 91</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTS SECTION (hidden by default) -->
+        <div id="results-section" class="hidden max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-5 px-1">
+                <button onclick="backToScan()" 
+                        class="flex items-center gap-x-2 text-sm font-medium text-zinc-500 hover:text-zinc-700 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> 
+                    <span>Back to scanner</span>
+                </button>
+                
+                <div class="flex items-center gap-x-2">
+                    <button onclick="saveToHistory()" 
+                            class="flex items-center gap-x-2 text-sm font-medium px-4 h-9 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-2xl text-zinc-600">
+                        <i class="fa-solid fa-bookmark"></i>
+                        <span class="hidden sm:inline">Save to History</span>
+                    </button>
+                    <button onclick="shareResult()" 
+                            class="flex items-center gap-x-2 text-sm font-medium px-4 h-9 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-2xl text-zinc-600">
+                        <i class="fa-solid fa-share-alt"></i>
+                        <span class="hidden sm:inline">Share</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Header -->
+            <div class="bg-white border border-zinc-200 rounded-3xl p-6 mb-5">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-y-4 gap-x-5">
+                    <div id="product-icon" 
+                         class="w-16 h-16 flex-shrink-0 rounded-2xl flex items-center justify-center text-4xl shadow-inner">
+                        <!-- Dynamic icon -->
+                    </div>
+                    
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-x-3">
+                            <h2 id="product-name" class="font-display text-3xl font-semibold tracking-tight"></h2>
+                            <span id="nutri-score-badge" 
+                                  class="nutri-badge inline-flex items-center justify-center w-9 h-9 text-white text-3xl font-black rounded-2xl flex-shrink-0"></span>
+                        </div>
+                        <div id="product-brand" class="text-emerald-700 font-medium"></div>
+                        <div id="product-meta" class="text-sm text-zinc-500 flex items-center gap-x-2 mt-0.5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Visual Score -->
+            <div class="bg-white border border-zinc-200 rounded-3xl p-6 mb-5">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+                    
+                    <!-- Big Gauge -->
+                    <div class="md:col-span-2 flex flex-col items-center">
+                        <div class="relative w-44 h-44">
+                            <svg id="score-gauge" width="176" height="176" class="transform -rotate-90">
+                                <!-- Background circle -->
+                                <circle cx="88" cy="88" r="78" fill="none" stroke="#e5e7eb" stroke-width="18"/>
+                                <!-- Progress circle -->
+                                <circle id="score-progress" cx="88" cy="88" r="78" fill="none" 
+                                        stroke="#10b981" stroke-width="18" 
+                                        stroke-dasharray="490" stroke-dashoffset="490"/>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <div id="score-value" 
+                                     class="health-score text-7xl font-display font-black tabular-nums tracking-tighter text-emerald-600">88</div>
+                                <div class="text-xs font-semibold text-zinc-400 -mt-1 tracking-[1.5px]">VITASCORE</div>
+                            </div>
+                        </div>
+                        <div id="score-label" class="mt-3 text-center">
+                            <span class="font-semibold text-lg"></span>
+                        </div>
+                    </div>
+
+                    <!-- Verdict + Key Metrics -->
+                    <div class="md:col-span-3 space-y-4">
+                        <div>
+                            <div id="verdict-text" class="verdict-text font-medium text-zinc-700 leading-snug"></div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div class="bg-zinc-50 rounded-2xl p-3">
+                                <div class="text-[10px] text-zinc-500 tracking-wider">NOVA</div>
+                                <div id="nova-group" class="font-display text-3xl font-bold text-zinc-700"></div>
+                                <div class="text-[10px] text-zinc-400 -mt-1">processing</div>
+                            </div>
+                            <div class="bg-zinc-50 rounded-2xl p-3">
+                                <div class="text-[10px] text-zinc-500 tracking-wider">SUGAR</div>
+                                <div id="sugar-value" class="font-display text-3xl font-bold text-zinc-700"></div>
+                                <div class="text-[10px] text-zinc-400 -mt-1">per 100g</div>
+                            </div>
+                            <div class="bg-zinc-50 rounded-2xl p-3">
+                                <div class="text-[10px] text-zinc-500 tracking-wider">PROTEIN</div>
+                                <div id="protein-value" class="font-display text-3xl font-bold text-zinc-700"></div>
+                                <div class="text-[10px] text-zinc-400 -mt-1">per 100g</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                
+                <!-- Nutrition Facts -->
+                <div class="bg-white border border-zinc-200 rounded-3xl p-5">
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <div class="font-semibold section-header flex items-center gap-x-2">
+                            <i class="fa-solid fa-chart-bar text-emerald-500"></i> 
+                            <span>Nutrition per 100g</span>
+                        </div>
+                    </div>
+                    
+                    <div id="nutrition-grid" class="grid grid-cols-2 gap-3 text-sm">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Ingredients & Analysis -->
+                <div class="bg-white border border-zinc-200 rounded-3xl p-5 flex flex-col">
+                    <div class="font-semibold section-header flex items-center gap-x-2 mb-4 px-1">
+                        <i class="fa-solid fa-list-check text-emerald-500"></i> 
+                        <span>Ingredients &amp; Insights</span>
+                    </div>
+                    
+                    <div class="flex-1 space-y-4 text-sm">
+                        <!-- Additives / Tags -->
+                        <div>
+                            <div class="text-xs uppercase tracking-widest text-zinc-400 mb-1.5 px-1">KEY INSIGHTS</div>
+                            <div id="insights-tags" class="flex flex-wrap gap-1.5">
+                                <!-- JS populated tags -->
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="text-xs uppercase tracking-widest text-zinc-400 mb-1.5 px-1">INGREDIENTS</div>
+                            <div id="ingredients-list" class="text-xs leading-relaxed max-h-24 overflow-auto pr-1 text-zinc-600">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="mt-5 bg-emerald-50 border border-emerald-100 rounded-3xl p-5">
+                <div class="font-semibold flex items-center gap-x-2 text-emerald-700 mb-3 px-1">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <span>Personalized Recommendations</span>
+                </div>
+                <div id="recommendations" class="text-sm text-emerald-800 space-y-1.5">
+                    <!-- JS populated -->
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-center">
+                <div onclick="window.open('https://world.openfoodfacts.org/', '_blank')" 
+                     class="cursor-pointer flex items-center gap-x-2 text-xs text-zinc-400 hover:text-zinc-500">
+                    <i class="fa-brands fa-wikipedia-w"></i>
+                    <span>Data sourced from Open Food Facts • Contribute &amp; improve the database</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY SECTION -->
+        <div id="history-section" class="hidden max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-6 px-1">
+                <div>
+                    <span class="font-display text-3xl font-semibold tracking-tight">Scan History</span>
+                    <p class="text-sm text-zinc-500">Your recent product analyses</p>
+                </div>
+                <button onclick="clearHistory()" class="text-xs px-4 py-2 text-red-500 hover:bg-red-50 rounded-2xl flex items-center gap-x-1.5">
+                    <i class="fa-solid fa-trash"></i> 
+                    <span class="hidden sm:inline">Clear all</span>
+                </button>
+            </div>
+            
+            <div id="history-list" class="space-y-3">
+                <!-- Populated dynamically by JS -->
+                <div class="text-center py-12 text-zinc-400">
+                    <i class="fa-solid fa-history text-4xl mb-3 opacity-30"></i>
+                    <p>No scans yet. Start scanning products!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Scanner Modal -->
+    <div id="scanner-modal" onclick="if (event.target.id === 'scanner-modal') closeScannerModal()" 
+         class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" 
+             class="bg-white w-full md:w-[420px] md:rounded-3xl md:m-4 rounded-t-3xl overflow-hidden shadow-2xl">
+            
+            <!-- Modal Header -->
+            <div class="px-5 pt-4 pb-3 flex items-center justify-between border-b">
+                <div>
+                    <span class="font-semibold">Scan QR Code</span>
+                    <div class="text-xs text-emerald-600">Point camera at the QR on packaging</div>
+                </div>
+                <button onclick="closeScannerModal()" class="w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-zinc-600">
+                    <i class="fa-solid fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <!-- Camera View -->
+            <div class="relative bg-zinc-900 aspect-video flex items-center justify-center overflow-hidden" id="camera-container">
+                <video id="camera-video" class="w-full h-full object-cover" autoplay playsinline></video>
+                
+                <!-- Scanning overlay -->
+                <div id="scan-overlay" class="hidden absolute inset-0 pointer-events-none">
+                    <div class="scan-overlay absolute inset-x-0 h-1/3 top-1/3"></div>
+                    
+                    <!-- Corner brackets -->
+                    <div class="absolute top-6 left-6 w-8 h-8 border-l-4 border-t-4 border-emerald-400 rounded-tl-2xl"></div>
+                    <div class="absolute top-6 right-6 w-8 h-8 border-r-4 border-t-4 border-emerald-400 rounded-tr-2xl"></div>
+                    <div class="absolute bottom-6 left-6 w-8 h-8 border-l-4 border-b-4 border-emerald-400 rounded-bl-2xl"></div>
+                    <div class="absolute bottom-6 right-6 w-8 h-8 border-r-4 border-b-4 border-emerald-400 rounded-br-2xl"></div>
+                </div>
+                
+                <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-white/70">
+                    <i class="fa-solid fa-camera text-5xl mb-3"></i>
+                    <p class="text-sm">Camera preview will appear here</p>
+                </div>
+            </div>
+            
+            <!-- Controls -->
+            <div class="p-4 bg-white flex items-center justify-between gap-x-3">
+                <button onclick="closeScannerModal()" 
+                        class="flex-1 py-3 text-sm font-medium border border-zinc-200 hover:bg-zinc-50 rounded-2xl transition-colors">
+                    Cancel
+                </button>
+                <button id="scan-btn" onclick="captureAndScanQR()"
+                        class="flex-1 py-3 text-sm font-semibold bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-x-2 hover:bg-emerald-700 active:bg-emerald-800 transition-all">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>CAPTURE &amp; SCAN</span>
+                </button>
+            </div>
+            
+            <div class="px-4 pb-4 text-[10px] text-center text-zinc-400">
+                Works best in good lighting • Supports most product QR codes
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[200] flex flex-col gap-y-2"></div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#10b981');
+            
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            'display': ['Poppins', 'system-ui', 'sans-serif']
+                        }
+                    }
+                }
+            };
+        }
+
+        // Demo product data (mimics Open Food Facts structure)
+        const DEMO_PRODUCTS = {
+            'coke': {
+                product_name: "Coca-Cola Classic",
+                brands: "Coca-Cola",
+                quantity: "330 ml",
+                categories: "Beverages > Sodas > Colas",
+                image_url: null,
+                nutriments: {
+                    "energy-kcal_100g": 42,
+                    "sugars_100g": 10.6,
+                    "saturated-fat_100g": 0,
+                    "sodium_100g": 0.01,
+                    "proteins_100g": 0,
+                    "fiber_100g": 0,
+                    "fat_100g": 0
+                },
+                nutriscore_grade: "e",
+                nova_group: 4,
+                ingredients_text: "Carbonated water, sugar, caramel color (E150d), phosphoric acid, natural flavours, caffeine",
+                additives_tags: ["en:e150d", "en:e338"],
+                ingredients_analysis_tags: ["en:contains-palm-oil", "en:vegan"],
+                _demoScore: 22
+            },
+            'oats': {
+                product_name: "Quaker Oats",
+                brands: "Quaker",
+                quantity: "500 g",
+                categories: "Breakfast cereals > Oats",
+                image_url: null,
+                nutriments: {
+                    "energy-kcal_100g": 379,
+                    "sugars_100g": 1.2,
+                    "saturated-fat_100g": 1.9,
+                    "sodium_100g": 0.01,
+                    "proteins_100g": 13.5,
+                    "fiber_100g": 9.2,
+                    "fat_100g": 7
+                },
+                nutriscore_grade: "a",
+                nova_group: 1,
+                ingredients_text: "100% whole grain rolled oats",
+                additives_tags: [],
+                ingredients_analysis_tags: ["en:vegan", "en:vegetarian"],
+                _demoScore: 88
+            },
+            'yogurt': {
+                product_name: "Greek Style Natural Yogurt",
+                brands: "Fage / Generic",
+                quantity: "150 g",
+                categories: "Dairy > Yogurts",
+                image_url: null,
+                nutriments: {
+                    "energy-kcal_100g": 97,
+                    "sugars_100g": 4.0,
+                    "saturated-fat_100g": 5.0,
+                    "sodium_100g": 0.04,
+                    "proteins_100g": 9.0,
+                    "fiber_100g": 0,
+                    "fat_100g": 5
+                },
+                nutriscore_grade: "b",
+                nova_group: 3,
+                ingredients_text: "Pasteurised skimmed milk, live active cultures (L. bulgaricus, S. thermophilus)",
+                additives_tags: [],
+                ingredients_analysis_tags: ["en:contains-milk"],
+                _demoScore: 76
+            },
+            'chips': {
+                product_name: "Classic Potato Chips",
+                brands: "Lay's / Walkers",
+                quantity: "150 g",
+                categories: "Snacks > Chips > Potato chips",
+                image_url: null,
+                nutriments: {
+                    "energy-kcal_100g": 536,
+                    "sugars_100g": 0.5,
+                    "saturated-fat_100g": 3.5,
+                    "sodium_100g": 0.6,
+                    "proteins_100g": 6.5,
+                    "fiber_100g": 4.2,
+                    "fat_100g": 34
+                },
+                nutriscore_grade: "d",
+                nova_group: 4,
+                ingredients_text: "Potatoes, vegetable oil (sunflower, rapeseed), salt",
+                additives_tags: [],
+                ingredients_analysis_tags: ["en:contains-palm-oil"],
+                _demoScore: 38
+            },
+            'almonds': {
+                product_name: "Dry Roasted Almonds",
+                brands: "Blue Diamond / Generic",
+                quantity: "200 g",
+                categories: "Nuts & seeds > Almonds",
+                image_url: null,
+                nutriments: {
+                    "energy-kcal_100g": 598,
+                    "sugars_100g": 3.5,
+                    "saturated-fat_100g": 3.8,
+                    "sodium_100g": 0.01,
+                    "proteins_100g": 21,
+                    "fiber_100g": 12.5,
+                    "fat_100g": 50
+                },
+                nutriscore_grade: "a",
+                nova_group: 2,
+                ingredients_text: "Almonds, sea salt",
+                additives_tags: [],
+                ingredients_analysis_tags: ["en:vegan"],
+                _demoScore: 91
+            }
+        };
+
+        let currentProduct = null;
+        let currentScore = 0;
+        let currentEcoScore = 70;
+        let currentUserProfile = loadUserProfile(); // Persistent profile
+        let stream = null;
+        let scanInterval = null;
+
+        function loadUserProfile() {
+            try {
+                return JSON.parse(localStorage.getItem('vitascan_user_profile') || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function saveUserProfile(profile) {
+            localStorage.setItem('vitascan_user_profile', JSON.stringify(profile));
+            currentUserProfile = profile;
+            // Re-apply to SDK if available
+            if (window.VitaScanSDK && VitaScanSDK.setBranding) {
+                // Branding separate, but profile for scoring
+            }
+        }
+
+        function showSection(sectionId) {
+            document.getElementById('scan-section').classList.add('hidden');
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('history-section').classList.add('hidden');
+            
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            if (sectionId === 'history-section') {
+                renderHistory();
+            }
+        }
+
+        function showAbout() {
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/60 flex items-center justify-center z-[200] p-4`;
+            modal.innerHTML = `
+                <div onclick="event.target.remove()" class="absolute inset-0"></div>
+                <div onclick="event.stopImmediatePropagation()" class="relative bg-white max-w-md w-full rounded-3xl p-7 shadow-xl">
+                    <div class="flex justify-between items-start mb-5">
+                        <div>
+                            <span class="font-display text-2xl font-semibold">How VitaScan works</span>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove()" class="text-3xl leading-none text-zinc-300 hover:text-zinc-400">&times;</button>
+                    </div>
+                    
+                    <div class="space-y-5 text-sm">
+                        <div class="flex gap-4">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600"><i class="fa-solid fa-qrcode"></i></div>
+                            <div>
+                                <div class="font-semibold">1. Scan the QR</div>
+                                <div class="text-zinc-600">Use your camera to scan any QR code found on FMCG product packaging (food, beverages, snacks, personal care).</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                            <div>
+                                <div class="font-semibold">2. Instant Analysis</div>
+                                <div class="text-zinc-600">We fetch real nutrition data from Open Food Facts (world's largest open food database) or use our smart local scoring for demo products.</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600"><i class="fa-solid fa-chart-line"></i></div>
+                            <div>
+                                <div class="font-semibold">3. Visual Health Score</div>
+                                <div class="text-zinc-600">See your custom <strong>VitaScore (0-100)</strong>, official Nutri-Score, processing level (NOVA), sugar/protein highlights, and clear recommendations.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-5 border-t text-xs text-zinc-500">
+                        Built for transparency. All nutrition data is crowdsourced and verifiable. 
+                        This demo works fully offline for sample products and uses live data when possible.
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function getScoreColor(score) {
+            if (score >= 85) return { color: '#10b981', label: 'Excellent', bg: 'bg-emerald-500' };
+            if (score >= 70) return { color: '#22c55e', label: 'Good', bg: 'bg-emerald-400' };
+            if (score >= 55) return { color: '#eab308', label: 'Fair', bg: 'bg-yellow-400' };
+            if (score >= 35) return { color: '#f97316', label: 'Poor', bg: 'bg-orange-500' };
+            return { color: '#ef4444', label: 'Avoid / Limit', bg: 'bg-red-500' };
+        }
+
+        // EvoMetaClaw: Update eco/citizen score display (simple badge for now)
+        function updateEcoScoreDisplay(ecoScore) {
+            // Find or create a small eco badge in results header area
+            let ecoContainer = document.getElementById('eco-score-container');
+            if (!ecoContainer) {
+                // Inject a small eco pill next to nutri badge if possible, or in metrics
+                const nutriBadge = document.getElementById('nutri-score-badge');
+                if (nutriBadge && nutriBadge.parentNode) {
+                    ecoContainer = document.createElement('div');
+                    ecoContainer.id = 'eco-score-container';
+                    ecoContainer.className = 'ml-3 inline-flex items-center px-3 py-1 rounded-2xl text-xs font-bold bg-teal-100 text-teal-700';
+                    nutriBadge.parentNode.appendChild(ecoContainer);
+                }
+            }
+            if (ecoContainer) {
+                ecoContainer.innerHTML = `🌍 Eco ${ecoScore}`;
+                ecoContainer.title = 'Citizen / Sustainability Score (higher = better for planet)';
+            }
+        }
+
+        // Record feedback for EvoMetaClaw self-evolving model (the flywheel)
+        window.recordEvoFeedback = function(type, value, productName) {
+            if (window.VitaScanSDK && VitaScanSDK.recordFeedback) {
+                const model = VitaScanSDK.recordFeedback({
+                    type: type,
+                    value: value,
+                    context: { product: productName, timestamp: Date.now() }
+                });
+                showToast(`Thanks! Your EvoMetaClaw model updated (${model.feedbackCount || 1} feedbacks). Future scores will adapt.`, 'success', 4000);
+                // Optional: subtle re-render or note that next scan benefits
+            } else {
+                showToast('Feedback recorded locally (model evolving).', 'info');
+            }
+        };
+
+        // === Commercial Integration Helpers (new for business success) ===
+        window.generateAndShowEmbed = function(product) {
+            if (!product) {
+                showToast('No product data available', 'error');
+                return;
+            }
+            const name = product.product_name || 'Product';
+            const scores = (window.VitaScanSDK && VitaScanSDK.calculateVitaScore) 
+                ? VitaScanSDK.calculateVitaScore(product) 
+                : { health: currentScore || 75, eco: currentEcoScore || 70 };
+            const health = typeof scores === 'object' ? scores.health : scores;
+            const eco = typeof scores === 'object' ? scores.eco : (currentEcoScore || 70);
+            
+            const embedCode = (window.VitaScanSDK && VitaScanSDK.generateEmbedCode) 
+                ? VitaScanSDK.generateEmbedCode(name, health, eco)
+                : `<!-- Embed not available -->`;
+            
+            const output = document.getElementById('commercial-output');
+            if (output) {
+                output.innerHTML = `<strong>Copy this embed code for your website:</strong><br><br>${embedCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}`;
+                output.classList.remove('hidden');
+                output.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Also copy to clipboard automatically
+            navigator.clipboard.writeText(embedCode).then(() => {
+                showToast('Embed code copied to clipboard! Paste into your site.', 'success');
+            }).catch(() => {
+                showToast('Embed code ready in the box below.', 'info');
+            });
+        };
+
+        window.showBusinessInsights = function(product) {
+            if (!product || !window.VitaScanSDK || !VitaScanSDK.getBusinessInsights) {
+                showToast('Business insights require SDK', 'error');
+                return;
+            }
+            const insights = VitaScanSDK.getBusinessInsights(product);
+            const output = document.getElementById('commercial-output');
+            if (output) {
+                let html = `<strong>Business Insights for ${product.product_name || 'Product'}</strong><br><br>`;
+                html += `Health Score: <span class="font-bold text-emerald-600">${insights.healthScore}</span> | Eco Score: <span class="font-bold text-teal-600">${insights.ecoScore}</span><br><br>`;
+                html += `<strong>Key Insights:</strong><br>`;
+                insights.insights.forEach(i => { html += `• ${i}<br>`; });
+                html += `<br><strong>Commercial Value:</strong> ${insights.commercialValue}<br><br>`;
+                html += `<strong>Suggested Use:</strong> ${insights.suggestedUse}`;
+                output.innerHTML = html;
+                output.classList.remove('hidden');
+                output.scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        window.compareWithAnother = function() {
+            const output = document.getElementById('commercial-output');
+            if (!output) return;
+            output.innerHTML = `
+                <strong>Product Comparison Tool</strong><br><br>
+                Scan or load another product to compare side-by-side using EvoMetaClaw.<br><br>
+                <button onclick="startCompareMode()" class="px-4 py-2 bg-emerald-600 text-white text-sm rounded-2xl">Start Comparison Scan</button>
+                <br><br>
+                <em>Tip: Use the SDK compareProducts() in your own apps for automated A/B testing.</em>
+            `;
+            output.classList.remove('hidden');
+        };
+
+        window.startCompareMode = function() {
+            // Simple demo: prompt for second product or use demo
+            const secondKey = prompt('Enter demo key for comparison (oats, chips, yogurt, almonds, coke) or cancel for custom:', 'oats');
+            if (!secondKey) return;
+            const secondProduct = DEMO_PRODUCTS[secondKey.toLowerCase()];
+            if (!secondProduct || !currentProduct) {
+                showToast('Comparison needs two products. Try demo first.', 'info');
+                return;
+            }
+            if (window.VitaScanSDK && VitaScanSDK.compareProducts) {
+                const comparison = VitaScanSDK.compareProducts(currentProduct, secondProduct);
+                const output = document.getElementById('commercial-output');
+                if (output) {
+                    output.innerHTML = `
+                        <strong>Comparison Result</strong><br><br>
+                        <strong>${comparison.productA.name}</strong>: Health ${comparison.productA.health} | Eco ${comparison.productA.eco}<br>
+                        <strong>${comparison.productB.name}</strong>: Health ${comparison.productB.health} | Eco ${comparison.productB.eco}<br><br>
+                        <strong>Health Winner:</strong> ${comparison.healthWinner}<br>
+                        <strong>Eco Winner:</strong> ${comparison.ecoWinner}<br><br>
+                        <strong>Recommendation:</strong> ${comparison.recommendation}<br><br>
+                        <em>${comparison.commercialNote}</em>
+                    `;
+                    output.classList.remove('hidden');
+                }
+            } else {
+                showToast('SDK comparison not available', 'error');
+            }
+        };
+
+        // White-label branding applier (demo)
+        window.applyWhiteLabelBranding = function() {
+            const appName = document.getElementById('wl-appname')?.value || 'VitaScan EvoMetaClaw';
+            const primary = document.getElementById('wl-primary')?.value || '#10b981';
+            
+            if (window.VitaScanSDK && VitaScanSDK.setBranding) {
+                VitaScanSDK.setBranding({
+                    appName: appName,
+                    primaryColor: primary,
+                    accentColor: primary
+                });
+            }
+            
+            // Apply to current page
+            document.documentElement.style.setProperty('--primary', primary);
+            showToast(`White-label applied: ${appName}`, 'success');
+            
+            // Re-render current if in results
+            if (currentProduct && document.getElementById('results-section') && !document.getElementById('results-section').classList.contains('hidden')) {
+                showProductAnalysis(currentProduct);
+            }
+        };
+
+        // Backend Dashboard Stub (simulates backend analytics using local data)
+        window.openDashboardStub = function() {
+            const history = JSON.parse(localStorage.getItem('vitascan_history') || '[]');
+            const totalScans = history.length;
+            let avgHealth = 0, avgEco = 0;
+            if (totalScans > 0) {
+                const sumHealth = history.reduce((sum, e) => sum + (e.score || 0), 0);
+                avgHealth = Math.round(sumHealth / totalScans);
+                // Eco is not stored in history, so estimate or use current
+                avgEco = Math.round(avgHealth * 0.9 + 5); // simple stub correlation
+            }
+
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/60 flex items-center justify-center z-[200] p-4`;
+            modal.innerHTML = `
+                <div onclick="event.target.remove()" class="absolute inset-0"></div>
+                <div onclick="event.stopImmediatePropagation()" class="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
+                    <div class="px-6 py-5 border-b flex justify-between items-center bg-zinc-50">
+                        <div>
+                            <span class="font-semibold text-xl">Business Dashboard (Stub)</span>
+                            <span class="ml-2 text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">Backend simulation</span>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove()" class="text-2xl text-zinc-400 hover:text-zinc-600">×</button>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="bg-zinc-50 rounded-2xl p-4 text-center">
+                                <div class="text-3xl font-black text-emerald-600">${totalScans}</div>
+                                <div class="text-xs text-zinc-500 mt-1">Total Scans</div>
+                            </div>
+                            <div class="bg-zinc-50 rounded-2xl p-4 text-center">
+                                <div class="text-3xl font-black text-emerald-600">${avgHealth}</div>
+                                <div class="text-xs text-zinc-500 mt-1">Avg Health Score</div>
+                            </div>
+                            <div class="bg-zinc-50 rounded-2xl p-4 text-center">
+                                <div class="text-3xl font-black text-teal-600">${avgEco}</div>
+                                <div class="text-xs text-zinc-500 mt-1">Avg Eco Score</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="font-semibold mb-2 text-sm">Recent Activity (stub)</div>
+                            <div class="space-y-2 text-sm max-h-32 overflow-auto">
+                                ${history.slice(0,5).map(h => `
+                                    <div class="flex justify-between bg-white border rounded-xl px-3 py-2">
+                                        <span>${h.product.product_name}</span>
+                                        <span class="font-mono text-emerald-600">${h.score}</span>
+                                    </div>
+                                `).join('') || '<div class="text-zinc-400">No scans yet</div>'}
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-zinc-500">
+                            This is a <strong>frontend stub</strong> simulating a backend dashboard. In production, connect to Supabase/Firebase or your API for real aggregated analytics, user management, and export.
+                            <br><br>
+                            <strong>White-label ready:</strong> Use <code>setBranding()</code> in SDK to customize for clients.
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 border-t bg-zinc-50 flex justify-end gap-3">
+                        <button onclick="this.closest('.fixed').remove()" class="px-5 py-2 text-sm border rounded-2xl">Close</button>
+                        <button onclick="exportDashboardStub()" class="px-5 py-2 text-sm bg-emerald-600 text-white rounded-2xl">Export CSV (stub)</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        };
+
+        window.exportDashboardStub = function() {
+            const history = JSON.parse(localStorage.getItem('vitascan_history') || '[]');
+            if (history.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            let csv = 'Timestamp,Product,Brand,Score\n';
+            history.forEach(h => {
+                csv += `${h.timestamp},${h.product.product_name || ''},${h.product.brands || ''},${h.score}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vitascan_dashboard_export.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // Persistent User Profile Modal (new for EvoMetaClaw personalization)
+        window.openProfileModal = function() {
+            const profile = { ...currentUserProfile };
+            
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/60 flex items-center justify-center z-[200] p-4`;
+            modal.innerHTML = `
+                <div onclick="event.target.remove()" class="absolute inset-0"></div>
+                <div onclick="event.stopImmediatePropagation()" class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+                    <div class="px-6 py-5 border-b flex justify-between items-center">
+                        <span class="font-semibold text-xl">Your Profile & Preferences</span>
+                        <button onclick="this.closest('.fixed').remove()" class="text-2xl text-zinc-400 hover:text-zinc-600">×</button>
+                    </div>
+                    
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Primary Goal</label>
+                            <select id="profile-goal" class="w-full border border-zinc-200 rounded-2xl px-4 py-2 text-sm">
+                                <option value="">General Health</option>
+                                <option value="blood_sugar" ${profile.goal === 'blood_sugar' ? 'selected' : ''}>Blood Sugar Control</option>
+                                <option value="athletic" ${profile.goal === 'athletic' ? 'selected' : ''}>Athletic Performance</option>
+                                <option value="weight_loss" ${profile.goal === 'weight_loss' ? 'selected' : ''}>Weight Management</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Dietary Preferences</label>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" id="profile-vegan" ${profile.vegan ? 'checked' : ''} class="accent-emerald-600"> Vegan
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" id="profile-low-sodium" ${profile.lowSodium ? 'checked' : ''} class="accent-emerald-600"> Low Sodium
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" id="profile-diabetic" ${profile.diabetic ? 'checked' : ''} class="accent-emerald-600"> Diabetic-friendly
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="text-xs text-zinc-500">
+                            These preferences personalize your VitaScore and recommendations across sessions (stored locally).
+                        </div>
+                    </div>
+                    
+                    <div class="px-6 py-4 border-t bg-zinc-50 flex justify-end gap-3">
+                        <button onclick="this.closest('.fixed').remove()" class="px-5 py-2 text-sm border rounded-2xl">Cancel</button>
+                        <button onclick="saveProfileFromModal(this)" class="px-5 py-2 text-sm bg-emerald-600 text-white rounded-2xl">Save Preferences</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        };
+
+        window.saveProfileFromModal = function(btn) {
+            const modal = btn.closest('.fixed');
+            const goal = modal.querySelector('#profile-goal').value;
+            const vegan = modal.querySelector('#profile-vegan').checked;
+            const lowSodium = modal.querySelector('#profile-low-sodium').checked;
+            const diabetic = modal.querySelector('#profile-diabetic').checked;
+
+            const newProfile = { goal, vegan, lowSodium, diabetic };
+            saveUserProfile(newProfile);
+            
+            showToast('Profile saved! Future scans will be personalized.', 'success');
+            modal.remove();
+            
+            // Re-analyze current product if open
+            if (currentProduct && !document.getElementById('results-section').classList.contains('hidden')) {
+                showProductAnalysis(currentProduct);
+            }
+        };
+
+        function getNutriScoreInfo(grade) {
+            const g = (grade || 'c').toLowerCase();
+            const map = {
+                'a': { letter: 'A', color: '#166534', bg: '#dcfce7', label: 'Very healthy' },
+                'b': { letter: 'B', color: '#4ade80', bg: '#f0fdf4', label: 'Healthy' },
+                'c': { letter: 'C', color: '#eab308', bg: '#fefce8', label: 'Average' },
+                'd': { letter: 'D', color: '#f59e0b', bg: '#fef3c7', label: 'Not ideal' },
+                'e': { letter: 'E', color: '#b91c1c', bg: '#fee2e2', label: 'Unhealthy' }
+            };
+            return map[g] || map['c'];
+        }
+
+        function updateGauge(score) {
+            const progressCircle = document.getElementById('score-progress');
+            const valueEl = document.getElementById('score-value');
+            const labelContainer = document.getElementById('score-label');
+            
+            const circumference = 490; // approx 2 * PI * 78
+            const offset = circumference * (1 - (score / 100));
+            
+            progressCircle.setAttribute('stroke-dashoffset', offset);
+            
+            // Dynamic color
+            const info = getScoreColor(score);
+            progressCircle.setAttribute('stroke', info.color);
+            valueEl.style.color = info.color;
+            valueEl.textContent = score;
+            
+            labelContainer.innerHTML = `
+                <span class="font-semibold text-lg" style="color: ${info.color}">${info.label}</span>
+            `;
+        }
+
+        function renderNutritionGrid(nutriments) {
+            const container = document.getElementById('nutrition-grid');
+            container.innerHTML = '';
+            
+            const items = [
+                { key: 'energy-kcal_100g', label: 'Energy', unit: 'kcal', icon: 'fa-fire' },
+                { key: 'sugars_100g', label: 'Sugars', unit: 'g', icon: 'fa-cube', warn: true },
+                { key: 'saturated-fat_100g', label: 'Sat. Fat', unit: 'g', icon: 'fa-drumstick-bite', warn: true },
+                { key: 'sodium_100g', label: 'Sodium', unit: 'mg', icon: 'fa-salt-shaker', convert: 1000, warn: true },
+                { key: 'proteins_100g', label: 'Protein', unit: 'g', icon: 'fa-dumbbell', good: true },
+                { key: 'fiber_100g', label: 'Fiber', unit: 'g', icon: 'fa-leaf', good: true }
+            ];
+            
+            items.forEach(item => {
+                let val = nutriments[item.key] || 0;
+                if (item.convert) val = Math.round(val * item.convert);
+                
+                const isHigh = item.warn && ((item.key.includes('sugar') && val > 10) || 
+                               (item.key.includes('saturated') && val > 5) || 
+                               (item.key.includes('sodium') && val > 400));
+                const isGood = item.good && val > (item.key.includes('protein') ? 8 : 5);
+                
+                const div = document.createElement('div');
+                div.className = `metric-card flex items-center gap-x-3 bg-zinc-50 border border-zinc-100 rounded-2xl px-4 py-3`;
+                
+                let colorClass = 'text-zinc-600';
+                if (isHigh) colorClass = 'text-red-500 font-semibold';
+                if (isGood) colorClass = 'text-emerald-600 font-semibold';
+                
+                div.innerHTML = `
+                    <div class="w-9 h-9 flex-shrink-0 rounded-xl bg-white flex items-center justify-center text-emerald-500">
+                        <i class="fa-solid ${item.icon}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-xs text-zinc-500">${item.label}</span>
+                            <span class="font-mono text-xl font-semibold tabular-nums ${colorClass}">${val}</span>
+                        </div>
+                        <div class="text-[10px] text-zinc-400 -mt-0.5">${item.unit}</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderInsightsAndIngredients(product) {
+            const tagsContainer = document.getElementById('insights-tags');
+            tagsContainer.innerHTML = '';
+            
+            const insights = [];
+            
+            // NOVA
+            const nova = product.nova_group || 3;
+            if (nova === 4) {
+                insights.push({ text: 'Ultra-processed', icon: 'fa-exclamation-triangle', color: 'red' });
+            } else if (nova === 3) {
+                insights.push({ text: 'Processed', icon: 'fa-info-circle', color: 'amber' });
+            } else {
+                insights.push({ text: 'Minimally processed', icon: 'fa-check-circle', color: 'emerald' });
+            }
+            
+            // Additives
+            const additives = product.additives_tags || [];
+            if (additives.length > 0) {
+                insights.push({ text: `${additives.length} additive${additives.length > 1 ? 's' : ''}`, icon: 'fa-flask', color: 'amber' });
+            } else {
+                insights.push({ text: 'No additives', icon: 'fa-check', color: 'emerald' });
+            }
+            
+            // Palm oil etc from analysis tags
+            const analysis = product.ingredients_analysis_tags || [];
+            if (analysis.includes('en:contains-palm-oil')) {
+                insights.push({ text: 'Contains palm oil', icon: 'fa-leaf', color: 'amber' });
+            }
+            if (analysis.includes('en:vegan')) {
+                insights.push({ text: 'Vegan friendly', icon: 'fa-leaf', color: 'emerald' });
+            }
+            if (analysis.includes('en:vegetarian')) {
+                insights.push({ text: 'Vegetarian', icon: 'fa-leaf', color: 'emerald' });
+            }
+            
+            insights.forEach(ins => {
+                const span = document.createElement('span');
+                const color = ins.color === 'red' ? 'bg-red-100 text-red-700' : 
+                              ins.color === 'amber' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+                span.className = `ingredient-tag inline-flex items-center gap-x-1.5 px-3 py-1 text-xs font-medium ${color}`;
+                span.innerHTML = `<i class="fa-solid ${ins.icon} text-xs"></i> ${ins.text}`;
+                tagsContainer.appendChild(span);
+            });
+            
+            // Ingredients list
+            const ingContainer = document.getElementById('ingredients-list');
+            const ingredientsText = product.ingredients_text || 'Ingredients information not available.';
+            ingContainer.innerHTML = ingredientsText;
+            
+            // Simple highlighting for bad ingredients
+            if (product.ingredients_text) {
+                const badWords = ['sugar', 'palm', 'hydrogenated', 'aspartame', 'glutamate', 'caramel color', 'e150', 'e951', 'sodium benzoate', 'artificial'];
+                let highlighted = ingredientsText;
+                badWords.forEach(word => {
+                    const regex = new RegExp(`(${word})`, 'gi');
+                    highlighted = highlighted.replace(regex, '<span class="bg-red-100 text-red-600 px-0.5 rounded">$1</span>');
+                });
+                ingContainer.innerHTML = highlighted;
+            }
+        }
+
+        function renderRecommendations(product, score) {
+            const container = document.getElementById('recommendations');
+            container.innerHTML = '';
+            
+            const recs = [];
+            const n = product.nutriments || {};
+            const nova = product.nova_group || 3;
+            const sugar = n["sugars_100g"] || 0;
+            
+            if (score < 45) {
+                recs.push("Consider this an occasional treat rather than a daily staple.");
+                recs.push("Look for lower-sugar or minimally-processed alternatives in the same category.");
+            } else if (score < 70) {
+                recs.push("Decent option in moderation. Pair with whole foods.");
+            } else {
+                recs.push("Great choice! High in beneficial nutrients.");
+            }
+            
+            if (sugar > 8) {
+                recs.push("High in added sugars — limit portions if watching blood sugar or weight.");
+            }
+            
+            if (nova === 4) {
+                recs.push("Ultra-processed. Try making a homemade version for better control over ingredients.");
+            }
+            
+            if ((n["proteins_100g"] || 0) > 10) {
+                recs.push("Good protein content — excellent for satiety and muscle maintenance.");
+            }
+            
+            if ((n["fiber_100g"] || 0) > 6) {
+                recs.push("High fiber supports digestion and long-term metabolic health.");
+            }
+            
+            // Generic good advice
+            recs.push("Always check the full ingredient list and serving size on the actual package.");
+            
+            recs.forEach(text => {
+                const p = document.createElement('p');
+                p.className = 'flex items-start gap-x-2';
+                p.innerHTML = `<i class="fa-solid fa-check mt-1 text-emerald-500 text-xs"></i> <span>${text}</span>`;
+                container.appendChild(p);
+            });
+        }
+
+        function showProductAnalysis(product) {
+            currentProduct = product;
+            
+            // Hide scan, show results
+            document.getElementById('scan-section').classList.add('hidden');
+            document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('history-section').classList.add('hidden');
+            
+            // Header
+            document.getElementById('product-name').textContent = product.product_name || 'Unknown Product';
+            document.getElementById('product-brand').textContent = product.brands || '';
+            
+            const meta = document.getElementById('product-meta');
+            meta.innerHTML = `
+                <span>${product.quantity || ''}</span>
+                ${product.categories ? `<span class="text-zinc-300">•</span><span>${product.categories.split('>')[0].trim()}</span>` : ''}
+            `;
+            
+            // Icon
+            const iconContainer = document.getElementById('product-icon');
+            iconContainer.className = `w-16 h-16 flex-shrink-0 rounded-2xl flex items-center justify-center text-4xl shadow-inner`;
+            
+            let iconHTML = '';
+            const cat = (product.categories || '').toLowerCase();
+            if (cat.includes('beverage') || cat.includes('soda') || cat.includes('cola')) {
+                iconHTML = `<i class="fa-solid fa-wine-bottle text-red-500"></i>`;
+                iconContainer.style.background = '#fee2e2';
+            } else if (cat.includes('oat') || cat.includes('cereal') || cat.includes('breakfast')) {
+                iconHTML = `<i class="fa-solid fa-seedling text-amber-600"></i>`;
+                iconContainer.style.background = '#fef3c7';
+            } else if (cat.includes('yogurt') || cat.includes('dairy')) {
+                iconHTML = `<i class="fa-solid fa-cheese text-sky-600"></i>`;
+                iconContainer.style.background = '#e0f2fe';
+            } else if (cat.includes('chip') || cat.includes('snack')) {
+                iconHTML = `<i class="fa-solid fa-bowl-food text-orange-500"></i>`;
+                iconContainer.style.background = '#ffedd5';
+            } else if (cat.includes('nut') || cat.includes('almond')) {
+                iconHTML = `<i class="fa-solid fa-leaf text-emerald-600"></i>`;
+                iconContainer.style.background = '#d1fae5';
+            } else {
+                iconHTML = `<i class="fa-solid fa-box text-zinc-400"></i>`;
+                iconContainer.style.background = '#f4f4f5';
+            }
+            iconContainer.innerHTML = iconHTML;
+            
+            // Nutri-Score badge
+            const nutriInfo = getNutriScoreInfo(product.nutriscore_grade);
+            const badge = document.getElementById('nutri-score-badge');
+            badge.style.backgroundColor = nutriInfo.bg;
+            badge.style.color = nutriInfo.color;
+            badge.textContent = nutriInfo.letter;
+            badge.title = nutriInfo.label;
+            
+            // Calculate & show VitaScore + EcoScore using EvoMetaClaw SDK (self-evolving + citizen insights)
+            const scores = (window.VitaScanSDK && VitaScanSDK.calculateVitaScore) 
+              ? VitaScanSDK.calculateVitaScore(product, currentUserProfile || {}) 
+              : { health: 65, eco: 70 };
+            const score = scores.health || scores; // backward compat
+            const ecoScore = scores.eco || 70;
+            currentScore = score;
+            currentEcoScore = ecoScore;
+            updateGauge(score);
+            
+            // Update or add EcoScore display (new citizen value prop)
+            updateEcoScoreDisplay(ecoScore);
+            
+            // Verdict
+            const verdictEl = document.getElementById('verdict-text');
+            const info = getScoreColor(score);
+            let verdict = '';
+            if (score >= 85) verdict = "Excellent choice for everyday consumption. Packed with beneficial nutrients and minimally processed.";
+            else if (score >= 70) verdict = "A solid, healthy option you can enjoy regularly as part of a balanced diet.";
+            else if (score >= 55) verdict = "Acceptable in moderation. Watch portion sizes and balance with nutrient-dense whole foods.";
+            else if (score >= 35) verdict = "Not the healthiest choice. Better consumed occasionally. Consider lower-sugar or less-processed swaps.";
+            else verdict = "High in sugar, fat or additives. Best avoided or limited significantly in your diet.";
+            
+            verdictEl.innerHTML = `<span style="color: ${info.color}" class="font-semibold">${info.label}.</span> ${verdict}`;
+            
+            // Key metrics row
+            document.getElementById('nova-group').textContent = product.nova_group || '?';
+            document.getElementById('sugar-value').textContent = (product.nutriments?.sugars_100g || 0).toFixed(1);
+            document.getElementById('protein-value').textContent = (product.nutriments?.proteins_100g || 0).toFixed(1);
+            
+            // Nutrition grid
+            renderNutritionGrid(product.nutriments || {});
+            
+            // Insights + ingredients
+            renderInsightsAndIngredients(product);
+            
+            // Recommendations
+            renderRecommendations(product, score);
+            
+            // === Commercial Integration Section (new for business value) ===
+            // Low-hanging fruit: easy embed for websites, insights for brands, compare for e-comm
+            const commercialSection = document.createElement('div');
+            commercialSection.className = 'mt-5 bg-white border border-zinc-200 rounded-3xl p-6';
+            commercialSection.innerHTML = `
+              <div class="flex items-center gap-x-3 mb-4">
+                <div class="w-9 h-9 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                  <i class="fa-solid fa-briefcase text-emerald-600"></i>
+                </div>
+                <div>
+                  <div class="font-semibold text-lg">Commercial Integration</div>
+                  <div class="text-xs text-zinc-500">Ready for brands, retailers & developers</div>
+                </div>
+              </div>
+              <p class="text-sm text-zinc-600 mb-4">Leverage this analysis in your product pages, apps, or marketing. The EvoMetaClaw self-evolving model gives you a unique data moat.</p>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <button onclick="generateAndShowEmbed(currentProduct)" 
+                        class="flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl transition-all active:scale-[0.985]">
+                  <i class="fa-solid fa-code"></i>
+                  <span>Get Embed Code</span>
+                </button>
+                <button onclick="showBusinessInsights(currentProduct)" 
+                        class="flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold border border-zinc-200 hover:bg-zinc-50 rounded-2xl transition-all active:scale-[0.985]">
+                  <i class="fa-solid fa-chart-line"></i>
+                  <span>Business Insights</span>
+                </button>
+                <button onclick="compareWithAnother()" 
+                        class="flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold border border-zinc-200 hover:bg-zinc-50 rounded-2xl transition-all active:scale-[0.985]">
+                  <i class="fa-solid fa-balance-scale"></i>
+                  <span>Compare Products</span>
+                </button>
+                <button onclick="openDashboardStub()" 
+                        class="flex items-center justify-center gap-x-2 px-4 py-3 text-sm font-semibold border border-emerald-200 hover:bg-emerald-50 text-emerald-700 rounded-2xl transition-all active:scale-[0.985]">
+                  <i class="fa-solid fa-tachometer-alt"></i>
+                  <span>Business Dashboard (stub)</span>
+                </button>
+              </div>
+
+              <!-- White-label Quick Settings -->
+              <div class="mt-4 pt-4 border-t border-zinc-100">
+                <div class="text-xs font-semibold text-zinc-500 mb-2">White-label Mode (demo)</div>
+                <div class="flex flex-wrap gap-2 text-xs">
+                  <input id="wl-appname" placeholder="App Name" value="VitaScan EvoMetaClaw" class="border border-zinc-200 rounded px-2 py-1 text-xs flex-1 min-w-[120px]">
+                  <input id="wl-primary" type="color" value="#10b981" class="w-10 h-8 border border-zinc-200 rounded cursor-pointer">
+                  <button onclick="applyWhiteLabelBranding()" class="px-3 py-1 bg-zinc-800 text-white rounded text-xs">Apply Branding</button>
+                </div>
+                <div class="text-[10px] text-zinc-400 mt-1">Applies to embeds &amp; app. Use setBranding() in SDK for full control.</div>
+              </div>
+              
+              <div id="commercial-output" class="mt-4 hidden bg-zinc-50 border border-zinc-100 rounded-2xl p-4 text-sm font-mono whitespace-pre-wrap overflow-auto max-h-64"></div>
+            `;
+            // Append after recommendations container or to results area
+            const recContainer = document.getElementById('recommendations');
+            if (recContainer && recContainer.parentNode) {
+              recContainer.parentNode.appendChild(commercialSection);
+            } else {
+              // Fallback to results section
+              const results = document.getElementById('results-section');
+              if (results) results.appendChild(commercialSection);
+            }
+            
+            // Scroll to top of results
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+
+        async function fetchFromOpenFoodFacts(barcode) {
+            try {
+                const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+                const data = await response.json();
+                
+                if (data.status === 1 && data.product) {
+                    return data.product;
+                } else {
+                    throw new Error('Product not found in database');
+                }
+            } catch (error) {
+                console.error('OFF fetch error:', error);
+                throw error;
+            }
+        }
+
+        function loadDemoProduct(key) {
+            const product = DEMO_PRODUCTS[key];
+            if (product) {
+                showProductAnalysis(product);
+                // Toast success
+                showToast(`Loaded demo: ${product.product_name}`, 'success');
+            }
+        }
+
+        // QR Scanner functions
+        async function startQRScan() {
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            const video = document.getElementById('camera-video');
+            const placeholder = document.getElementById('camera-placeholder');
+            const overlay = document.getElementById('scan-overlay');
+            const scanBtn = document.getElementById('scan-btn');
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+                });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                overlay.classList.remove('hidden');
+                scanBtn.disabled = false;
+                
+                // Optional: continuous scanning mode (more advanced)
+                // For simplicity we use capture button, but we can add live detection
+                startLiveQRDetection(video);
+                
+            } catch (err) {
+                console.error('Camera error:', err);
+                placeholder.innerHTML = `
+                    <i class="fa-solid fa-exclamation-triangle text-red-400 text-4xl mb-2"></i>
+                    <p class="text-sm text-red-300">Camera access denied or unavailable.</p>
+                    <p class="text-xs mt-1 text-red-300/70">Please allow camera permissions and try again.</p>
+                `;
+                scanBtn.disabled = true;
+            }
+        }
+
+        function startLiveQRDetection(video) {
+            // Continuous scanning for better UX
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            if (scanInterval) clearInterval(scanInterval);
+            
+            scanInterval = setInterval(() => {
+                if (!video.videoWidth || video.paused || video.ended) return;
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+                
+                if (code && code.data) {
+                    clearInterval(scanInterval);
+                    handleQRResult(code.data);
+                }
+            }, 280); // ~3.5 scans per second
+        }
+
+        function captureAndScanQR() {
+            const video = document.getElementById('camera-video');
+            if (!video || !video.srcObject) {
+                showToast("Camera not active", "error");
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code && code.data) {
+                handleQRResult(code.data);
+            } else {
+                showToast("No QR code detected. Try again or adjust lighting/angle.", "error");
+            }
+        }
+
+        function handleQRResult(decodedText) {
+            closeScannerModal();
+            
+            // Show what was decoded
+            showToast(`QR decoded: ${decodedText.length > 60 ? decodedText.substring(0, 57) + '...' : decodedText}`, 'info', 4500);
+            
+            // Smart analysis
+            setTimeout(() => {
+                const trimmed = decodedText.trim();
+                
+                // Check if it's a pure barcode number
+                if (/^\d{8,14}$/.test(trimmed)) {
+                    analyzeBarcode(trimmed);
+                    return;
+                }
+                
+                // Check if it contains a barcode (common in GS1 or product URLs)
+                const barcodeMatch = trimmed.match(/\b(\d{8,14})\b/);
+                if (barcodeMatch) {
+                    analyzeBarcode(barcodeMatch[1]);
+                    return;
+                }
+                
+                // Check for known demo triggers (for testing)
+                const lower = trimmed.toLowerCase();
+                if (lower.includes('coke') || lower.includes('cola')) {
+                    loadDemoProduct('coke');
+                    return;
+                }
+                if (lower.includes('oat')) {
+                    loadDemoProduct('oats');
+                    return;
+                }
+                
+                // Otherwise show generic result screen with the decoded content
+                showGenericQRResult(trimmed);
+            }, 600);
+        }
+
+        async function analyzeBarcode(barcode) {
+            const loadingToast = showToast(`Fetching data for barcode ${barcode}...`, 'info', 8000);
+            
+            try {
+                const product = await fetchFromOpenFoodFacts(barcode);
+                // Remove loading toast
+                loadingToast.remove();
+                showProductAnalysis(product);
+            } catch (error) {
+                if (loadingToast && loadingToast.parentNode) loadingToast.parentNode.removeChild(loadingToast);
+                showToast(`Product not found for barcode ${barcode}. Try another code or use a demo product.`, 'error', 6000);
+                
+                // Show a fallback panel
+                setTimeout(() => {
+                    showGenericQRResult(barcode, true);
+                }, 800);
+            }
+        }
+
+        function showGenericQRResult(decodedText, isBarcodeNotFound = false) {
+            // Fallback screen when we can't get structured data
+            document.getElementById('scan-section').classList.add('hidden');
+            document.getElementById('results-section').classList.remove('hidden');
+            
+            // Minimal product header
+            document.getElementById('product-name').textContent = isBarcodeNotFound ? "Unknown Product" : "QR Code Scanned";
+            document.getElementById('product-brand').textContent = isBarcodeNotFound ? "Barcode not in database" : "Custom / Non-standard QR";
+            document.getElementById('product-meta').innerHTML = `<span class="font-mono text-xs">${decodedText}</span>`;
+            
+            const iconContainer = document.getElementById('product-icon');
+            iconContainer.style.background = '#f4f4f5';
+            iconContainer.innerHTML = `<i class="fa-solid fa-qrcode text-zinc-400 text-4xl"></i>`;
+            
+            // Hide or neutral nutri badge
+            const badge = document.getElementById('nutri-score-badge');
+            badge.style.backgroundColor = '#e5e7eb';
+            badge.style.color = '#52525b';
+            badge.textContent = '?';
+            
+            // Score as unknown
+            const progressCircle = document.getElementById('score-progress');
+            progressCircle.setAttribute('stroke', '#a1a1aa');
+            document.getElementById('score-value').textContent = '--';
+            document.getElementById('score-value').style.color = '#52525b';
+            document.getElementById('score-label').innerHTML = `<span class="font-semibold text-lg text-zinc-500">No data</span>`;
+            
+            document.getElementById('verdict-text').innerHTML = isBarcodeNotFound ? 
+                `We couldn't find nutrition information for this barcode in Open Food Facts.<br><span class="text-xs">You can contribute the product at <a href="https://world.openfoodfacts.org" target="_blank" class="underline">world.openfoodfacts.org</a></span>` :
+                `This QR code contains: <span class="font-mono break-all text-xs">${decodedText}</span><br><br>It may be a traceability code, batch number, or marketing link rather than a nutrition barcode.`;
+            
+            // Clear other sections or show minimal
+            document.getElementById('nutrition-grid').innerHTML = `<div class="col-span-2 text-center py-6 text-sm text-zinc-400">Detailed nutrition data unavailable for this QR code.</div>`;
+            document.getElementById('insights-tags').innerHTML = '';
+            document.getElementById('ingredients-list').innerHTML = 'No ingredient information available.';
+            document.getElementById('recommendations').innerHTML = `
+                <p class="text-emerald-700">Tip: Many FMCG products use standard barcodes (EAN-13 / UPC). Try scanning the barcode area or enter the number manually below.</p>
+            `;
+            
+            // Add manual barcode input helper
+            const recDiv = document.getElementById('recommendations');
+            const manualDiv = document.createElement('div');
+            manualDiv.className = 'mt-4 pt-4 border-t border-emerald-200';
+            manualDiv.innerHTML = `
+                <div class="text-xs text-emerald-600 mb-1.5">ENTER BARCODE MANUALLY</div>
+                <div class="flex gap-2">
+                    <input id="manual-barcode" type="text" placeholder="e.g. 5449000000996" 
+                           class="flex-1 border border-emerald-200 focus:border-emerald-400 rounded-2xl px-4 py-2 text-sm outline-none">
+                    <button onclick="analyzeManualBarcode()" 
+                            class="px-5 bg-emerald-600 text-white text-sm font-medium rounded-2xl">Analyze</button>
+                </div>
+            `;
+            recDiv.appendChild(manualDiv);
+            
+            currentProduct = { product_name: decodedText, _isGeneric: true };
+            currentScore = 0;
+        }
+
+        window.analyzeManualBarcode = function() {
+            const input = document.getElementById('manual-barcode');
+            if (!input) return;
+            const val = input.value.trim();
+            if (/^\d{8,14}$/.test(val)) {
+                analyzeBarcode(val);
+            } else {
+                showToast("Please enter a valid 8-14 digit barcode number", "error");
+            }
+        }
+
+        function closeScannerModal() {
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            
+            // Stop camera
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            
+            const video = document.getElementById('camera-video');
+            if (video) video.srcObject = null;
+        }
+
+        function showToast(message, type = 'success', duration = 3200) {
+            const container = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            let bg = 'bg-emerald-600';
+            let icon = 'fa-check-circle';
+            
+            if (type === 'error') {
+                bg = 'bg-red-600';
+                icon = 'fa-exclamation-circle';
+            } else if (type === 'info') {
+                bg = 'bg-zinc-700';
+                icon = 'fa-info-circle';
+            }
+            
+            toast.className = `flex items-center gap-x-3 ${bg} text-white text-sm shadow-xl px-5 py-3.5 rounded-2xl max-w-xs`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg opacity-90"></i>
+                <span class="flex-1">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.25s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 150);
+            }, duration);
+            
+            return toast;
+        }
+
+        function saveToHistory() {
+            if (!currentProduct) return;
+            
+            let history = JSON.parse(localStorage.getItem('vitascan_history') || '[]');
+            
+            const entry = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                product: {
+                    product_name: currentProduct.product_name,
+                    brands: currentProduct.brands,
+                    nutriscore_grade: currentProduct.nutriscore_grade,
+                    nova_group: currentProduct.nova_group
+                },
+                score: currentScore,
+                _demo: !!currentProduct._demoScore
+            };
+            
+            // Avoid duplicates
+            history = history.filter(h => h.product.product_name !== entry.product.product_name);
+            history.unshift(entry);
+            
+            // Keep last 12
+            if (history.length > 12) history = history.slice(0, 12);
+            
+            localStorage.setItem('vitascan_history', JSON.stringify(history));
+            
+            showToast('Saved to history!', 'success', 1800);
+            
+            // If on history page, refresh
+            if (!document.getElementById('history-section').classList.contains('hidden')) {
+                renderHistory();
+            }
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            const history = JSON.parse(localStorage.getItem('vitascan_history') || '[]');
+            
+            container.innerHTML = '';
+            
+            if (history.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-zinc-400">
+                        <i class="fa-solid fa-history text-4xl mb-3 opacity-30"></i>
+                        <p>No scans saved yet.<br>Scan products to build your history.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            history.forEach(entry => {
+                const date = new Date(entry.timestamp);
+                const timeAgo = getTimeAgo(date);
+                
+                const info = getScoreColor(entry.score);
+                const nutri = getNutriScoreInfo(entry.product.nutriscore_grade);
+                
+                const div = document.createElement('div');
+                div.className = `bg-white border border-zinc-200 hover:border-emerald-200 transition-colors rounded-3xl p-4 flex items-center gap-x-4 cursor-pointer`;
+                div.onclick = () => {
+                    // Reconstruct minimal product and show
+                    const reconstructed = {
+                        product_name: entry.product.product_name,
+                        brands: entry.product.brands,
+                        nutriscore_grade: entry.product.nutriscore_grade,
+                        nova_group: entry.product.nova_group,
+                        _demoScore: entry._demo ? entry.score : null,
+                        nutriments: {} // limited data
+                    };
+                    showProductAnalysis(reconstructed);
+                };
+                
+                div.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold truncate">${entry.product.product_name}</div>
+                        <div class="text-xs text-zinc-500">${entry.product.brands || ''} • ${timeAgo}</div>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-4 text-right">
+                        <div>
+                            <div class="text-xs text-zinc-400">VitaScore</div>
+                            <div class="font-display text-3xl font-black tabular-nums" style="color: ${info.color}">${entry.score}</div>
+                        </div>
+                        
+                        <div class="w-9 h-9 flex-shrink-0 rounded-2xl flex items-center justify-center text-xl font-black" 
+                             style="background: ${nutri.bg}; color: ${nutri.color}">
+                            ${nutri.letter}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + "y ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + "mo ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + "d ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + "h ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + "m ago";
+            return "just now";
+        }
+
+        function clearHistory() {
+            if (confirm('Clear all scan history?')) {
+                localStorage.removeItem('vitascan_history');
+                renderHistory();
+                showToast('History cleared', 'info');
+            }
+        }
+
+        function shareResult() {
+            if (!currentProduct) return;
+            
+            const text = `I just scanned ${currentProduct.product_name} on VitaScan!\nVitaScore: ${currentScore}/100 • Nutri-Score: ${currentProduct.nutriscore_grade?.toUpperCase() || 'N/A'}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'VitaScan Result',
+                    text: text
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Result copied to clipboard!', 'success');
+                }).catch(() => {
+                    prompt('Copy this result:', text);
+                });
+            }
+        }
+
+        function backToScan() {
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('scan-section').classList.remove('hidden');
+            currentProduct = null;
+        }
+
+        function initKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    const scanSection = document.getElementById('scan-section');
+                    if (!scanSection.classList.contains('hidden')) {
+                        startQRScan();
+                    }
+                }
+                if (e.metaKey && e.key === 'k') {
+                    e.preventDefault();
+                    const historySection = document.getElementById('history-section');
+                    if (historySection.classList.contains('hidden')) {
+                        showSection('history-section');
+                    } else {
+                        showSection('scan-section');
+                    }
+                }
+            });
+            
+            // Easter egg: type "demo" to show all demos or something, but skip
+        }
+
+        function init() {
+            initTailwind();
+            
+            // EvoMetaClaw Evolution: Initialize dark mode from localStorage or system
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const savedTheme = localStorage.getItem('vitascan_theme');
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            // PWA Service Worker Registration (EvoMetaClaw B+P evolution)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('%c[EvoMetaClaw] Service Worker registered for offline support.', 'color:#166534');
+                }).catch(err => console.log('SW registration failed (non-critical):', err));
+            }
+            
+            // PWA Install Prompt handling
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                // Show install button if not already installed
+                const installBtn = document.getElementById('pwa-install-btn');
+                if (installBtn) installBtn.classList.remove('hidden');
+            });
+            
+            window.installPWA = () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            showToast('Thanks for installing VitaScan EvoMetaClaw!', 'success');
+                        }
+                        deferredPrompt = null;
+                        const installBtn = document.getElementById('pwa-install-btn');
+                        if (installBtn) installBtn.classList.add('hidden');
+                    });
+                }
+            };
+            
+            // Initial state: show scan section
+            document.getElementById('scan-section').classList.remove('hidden');
+            
+            // Seed a couple history items for first-time users (demo)
+            if (!localStorage.getItem('vitascan_history')) {
+                const seed = [
+                    {
+                        id: Date.now() - 86400000 * 2,
+                        timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+                        product: { product_name: "Quaker Oats", brands: "Quaker", nutriscore_grade: "a", nova_group: 1 },
+                        score: 88,
+                        _demo: true
+                    },
+                    {
+                        id: Date.now() - 86400000,
+                        timestamp: new Date(Date.now() - 86400000).toISOString(),
+                        product: { product_name: "Coca-Cola Classic", brands: "Coca-Cola", nutriscore_grade: "e", nova_group: 4 },
+                        score: 22,
+                        _demo: true
+                    }
+                ];
+                localStorage.setItem('vitascan_history', JSON.stringify(seed));
+            }
+            
+            // Make sure results hidden
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('history-section').classList.add('hidden');
+            
+            initKeyboardShortcuts();
+            
+            // Welcome toast for first visit (subtle)
+            setTimeout(() => {
+                if (!localStorage.getItem('vitascan_welcomed')) {
+                    // showToast("EvoMetaClaw v1 activated. Scan or try demos.", 'info', 3800);
+                    localStorage.setItem('vitascan_welcomed', 'true');
+                }
+            }, 1800);
+            
+            // Bonus: allow pressing "s" to start scan from anywhere
+            document.addEventListener('keypress', function(ev) {
+                if (ev.key.toLowerCase() === 's' && document.activeElement.tagName === 'BODY') {
+                    const scanSec = document.getElementById('scan-section');
+                    if (!scanSec.classList.contains('hidden')) {
+                        startQRScan();
+                    }
+                }
+            });
+            
+            // EvoMetaClaw: Dark mode toggle function
+            window.toggleDarkMode = function() {
+                const html = document.documentElement;
+                const isDark = html.classList.toggle('dark');
+                localStorage.setItem('vitascan_theme', isDark ? 'dark' : 'light');
+                
+                const icon = document.getElementById('theme-icon');
+                if (icon) {
+                    icon.className = isDark 
+                        ? 'fa-solid fa-sun text-lg' 
+                        : 'fa-solid fa-moon text-lg';
+                }
+            };
+            
+            // Sync icon state
+            function syncThemeIcon() {
+                const icon = document.getElementById('theme-icon');
+                if (!icon) return;
+                const isDark = document.documentElement.classList.contains('dark');
+                icon.className = isDark 
+                    ? 'fa-solid fa-sun text-lg' 
+                    : 'fa-solid fa-moon text-lg';
+            }
+            // Call once after init
+            setTimeout(syncThemeIcon, 100);
+            
+            console.log('%c[EvoMetaClaw] VitaScan evolved & initialized. Ci+E+Im+B+P+D dimensions active. Ready for advanced FMCG analysis.', 'color:#166534');
+        }
+
+        // Boot the app
+        window.onload = init;
+    </script>
+</body>
+</html>
